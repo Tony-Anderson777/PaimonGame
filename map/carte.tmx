@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="50" height="50" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="95">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="50" height="50" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="99">
  <tileset firstgid="1" source="nature.tsx"/>
  <tileset firstgid="721" source="house.tsx"/>
  <layer id="1" name="Calque de Tuiles 1" width="50" height="50">
@@ -326,13 +326,11 @@
   <object id="81" x="248" y="124.5"/>
   <object id="83" type="collision" x="204" y="96.5" width="78" height="53"/>
   <object id="84" type="collision" x="458" y="128.5" width="96.5" height="50.5"/>
-  <object id="85" name="exit_house" x="473.091" y="164.182" width="15.4545" height="24.5455"/>
-  <object id="86" name="enter_house_exit" x="479.5" y="226.5">
+  <object id="95" name="enter_house" type="collision" x="472" y="163.25" width="17.25" height="36.75"/>
+  <object id="96" name="enter_house_exit" type="objects" x="481.917" y="217.5">
    <point/>
   </object>
-  <object id="87" name="player" type="objects" x="202.667" y="246.667">
-   <point/>
-  </object>
+  <object id="97" name="player" x="191.75" y="207.75" width="19.25" height="19.75"/>
  </objectgroup>
  <layer id="7" name="house" width="50" height="50">
   <data encoding="csv">

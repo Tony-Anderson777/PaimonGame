@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="25" height="25" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="19">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="25" height="25" tilewidth="16" tileheight="16" infinite="0" nextlayerid="6" nextobjectid="22">
  <tileset firstgid="1" source="house.tsx"/>
  <layer id="1" name="floor" width="25" height="25">
   <data encoding="csv">
@@ -69,7 +69,7 @@
   <object id="8" type="collision" x="270.818" y="287.126" width="12.849" height="28.169"/>
   <object id="10" type="collision" x="287.62" y="294.539" width="45.96" height="20.7561"/>
   <object id="11" name="exit_house" x="81.8182" y="353.273" width="28.7273" height="13.0909"/>
-  <object id="14" name="spawn_house" x="102.909" y="334.364">
+  <object id="14" name="spawn_house" x="121.409" y="279.864">
    <point/>
   </object>
   <object id="15" type="collision" x="31.5" y="15.5" width="17.5" height="367"/>
