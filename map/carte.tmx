@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="50" height="50" tilewidth="16" tileheight="16" infinite="0" nextlayerid="8" nextobjectid="99">
+<map version="1.10" tiledversion="1.11.2" orientation="orthogonal" renderorder="right-down" width="50" height="50" tilewidth="16" tileheight="16" infinite="0" nextlayerid="9" nextobjectid="161">
  <tileset firstgid="1" source="nature.tsx"/>
  <tileset firstgid="721" source="house.tsx"/>
  <layer id="1" name="Calque de Tuiles 1" width="50" height="50">
@@ -326,11 +326,28 @@
   <object id="81" x="248" y="124.5"/>
   <object id="83" type="collision" x="204" y="96.5" width="78" height="53"/>
   <object id="84" type="collision" x="458" y="128.5" width="96.5" height="50.5"/>
-  <object id="95" name="enter_house" type="collision" x="472" y="163.25" width="17.25" height="36.75"/>
+  <object id="95" name="enter_house" type="portal" x="472" y="163.25" width="17.25" height="36.75">
+   <properties>
+    <property name="target_map" value="house.tmx"/>
+    <property name="target_spawn" value="spawn_house"/>
+   </properties>
+  </object>
   <object id="96" name="enter_house_exit" type="objects" x="481.917" y="217.5">
    <point/>
   </object>
   <object id="97" name="player" x="191.75" y="207.75" width="19.25" height="19.75"/>
+  <object id="155" name="enter_house2" type="portal" x="218.75" y="129.25" width="15.5" height="27.5">
+   <properties>
+    <property name="target_map" value="house2.tmx"/>
+    <property name="target_spawn" value="spawn_from_lobby"/>
+   </properties>
+  </object>
+  <object id="156" x="485" y="181.25"/>
+  <object id="157" x="484.75" y="181.25"/>
+  <object id="158" x="382" y="160.5" width="45.25" height="2.5"/>
+  <object id="159" name="spawn_house2_exit" x="224" y="176">
+   <point/>
+  </object>
  </objectgroup>
  <layer id="7" name="house" width="50" height="50">
   <data encoding="csv">
