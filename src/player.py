@@ -7,17 +7,18 @@ SPRITES_DIR = os.path.join(BASE_DIR, 'sprites')
 
 class Player(pygame.sprite.Sprite):
 
-    def __init__(self, x: int, y: object) -> object:
+    def __init__(self, x: int, y: int) -> None:
         super().__init__()
         self.sprite_sheet = pygame.image.load(os.path.join(SPRITES_DIR, 'Player.png'))
         self.image = self.get_image(0, 0)
-        self.image.set_colorkey([0, 0, 0])
+        self.image.set_colorkey((0, 0, 0))
         self.rect = self.image.get_rect()
         self.speed = 3  # Vitesse du joueur, adapte la valeur si besoin
         self.feet = pygame.Rect(0, 0, self.rect.width * 0.5, 12)
         self.feet.midbottom = self.rect.midbottom
         self.position = [x, y]
-        self.images ={
+        self.old_position = self.position.copy()
+        self.images = {
             'down': self.get_image(0, 0),
             'left': self.get_image(0, 32),
             'right': self.get_image(0, 64),
