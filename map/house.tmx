@@ -68,7 +68,12 @@
   <object id="7" type="collision" x="285.149" y="218.433" width="32.6168" height="32.6168"/>
   <object id="8" type="collision" x="270.818" y="287.126" width="12.849" height="28.169"/>
   <object id="10" type="collision" x="287.62" y="294.539" width="45.96" height="20.7561"/>
-  <object id="11" name="exit_house" x="81.8182" y="353.273" width="28.7273" height="13.0909"/>
+  <object id="11" name="exit_house" type="portal" x="81.8182" y="353.273" width="28.7273" height="13.0909">
+   <properties>
+    <property name="target_map" value="carte.tmx"/>
+    <property name="target_spawn" value="enter_house_exit"/>
+   </properties>
+  </object>
   <object id="14" name="spawn_house" x="121.409" y="279.864">
    <point/>
   </object>

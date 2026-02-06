@@ -2,7 +2,6 @@ import os
 import pygame
 import pytmx
 import pyscroll
-from pygame.math import Vector2  # Importe Vector2 pour les positions par défaut
 
 from player import Player
 
@@ -11,12 +10,23 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 MAP_DIR = os.path.join(BASE_DIR, 'map')
 
 
-def get_object_by_name(tmx_data, name):
-    """Cherche un objet par son nom dans les données TMX."""
-    for obj in tmx_data.objects:
-        if obj.name == name:
-            return obj
-    return None
+class Portal:
+    """Représente une zone de transition vers une autre carte."""
+
+    def __init__(self, name, rect, target_map, target_spawn):
+        self.name = name
+        self.rect = rect
+        self.target_map = target_map      # ex: "house.tmx"
+        self.target_spawn = target_spawn  # ex: "spawn_from_lobby"
+
+
+class Map:
+    """Gère les données d'une carte chargée."""
+
+    def __init__(self, name, walls, portals):
+        self.name = name
+        self.walls = walls
+        self.portals = portals
 
 
 class Game:
@@ -30,43 +40,81 @@ class Game:
         self.screen = pygame.display.set_mode((800, 600))
         pygame.display.set_caption("Paimon - Adventure")
 
-        # Charger la carte (tmx)
-        tmx_data = pytmx.util_pygame.load_pygame(os.path.join(MAP_DIR, 'carte.tmx'))
+        # Carte actuelle et groupe pyscroll
+        self.current_map = None
+        self.group = None
+
+        # Générer un joueur (position temporaire, mise à jour au chargement de la carte)
+        self.player = Player(0, 0)
+
+        # Charger la carte initiale
+        self.load_map('carte.tmx', 'player')
+
+    def _get_object_by_name(self, tmx_data, name):
+        """Cherche un objet par son nom dans les données TMX."""
+        for obj in tmx_data.objects:
+            if obj.name == name:
+                return obj
+        return None
+
+    def load_map(self, map_name, spawn_point_name):
+        """
+        Charge une carte et positionne le joueur au point de spawn spécifié.
+
+        Args:
+            map_name: Nom du fichier TMX (ex: 'carte.tmx', 'house.tmx')
+            spawn_point_name: Nom de l'objet point de spawn dans le TMX
+        """
+        # Charger les données TMX
+        tmx_path = os.path.join(MAP_DIR, map_name)
+        tmx_data = pytmx.util_pygame.load_pygame(tmx_path)
+
+        # Créer le renderer pyscroll
         map_data = pyscroll.data.TiledMapData(tmx_data)
         map_layer = pyscroll.orthographic.BufferedRenderer(map_data, self.screen.get_size())
         map_layer.zoom = 2
 
-        # Générer un joueur
-        player_position = get_object_by_name(tmx_data,"player")
-        # Vérifier si l'objet 'player' existe dans la carte TMX
-        if player_position is None:
-            print(
-                "Attention : L'objet de départ du joueur 'player' n'a pas été trouvé dans carte.tmx. Utilisation de la position par défaut (100, 100).")
-            # Définir une position par défaut si l'objet n'est pas trouvé
-            player_position = Vector2(100, 100)
-
-        self.player = Player(player_position.x, player_position.y)
-
-        # Définir une liste qui va stocker les rectangles de collision
-        self.walls = []
+        # Collecter les murs (collisions)
+        walls = []
         for obj in tmx_data.objects:
             if obj.type == "collision":
-                self.walls.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
+                walls.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
 
-        # Dessiner le groupe de calques (map et joueur)
+        # Collecter les portails
+        portals = []
+        for obj in tmx_data.objects:
+            if obj.type == "portal":
+                # Récupérer les propriétés personnalisées du portail
+                target_map = obj.properties.get('target_map', '')
+                target_spawn = obj.properties.get('target_spawn', 'default')
+
+                portal = Portal(
+                    name=obj.name,
+                    rect=pygame.Rect(obj.x, obj.y, obj.width, obj.height),
+                    target_map=target_map,
+                    target_spawn=target_spawn
+                )
+                portals.append(portal)
+
+        # Créer l'objet Map
+        self.current_map = Map(map_name, walls, portals)
+
+        # Recréer le groupe pyscroll
         self.group = pyscroll.PyscrollGroup(map_layer=map_layer, default_layer=5)
         self.group.add(self.player)
 
-        # Définir le rectangle de collision pour entrer dans la maison
-        enter_house = get_object_by_name(tmx_data,'enter_house')
-        if enter_house is not None:
-            self.enter_house_rect = pygame.Rect(enter_house.x, enter_house.y, enter_house.width, enter_house.height)
+        # Positionner le joueur au point de spawn
+        spawn_point = self._get_object_by_name(tmx_data, spawn_point_name)
+        if spawn_point:
+            self.player.position[0] = spawn_point.x
+            self.player.position[1] = spawn_point.y
         else:
-            print("Attention : L'objet 'enter_house' n'a pas été trouvé dans carte.tmx. Le rectangle de collision ne sera pas défini.")
-            self.enter_house_rect = pygame.Rect(0, 0, 0, 0)
+            print(f"Attention: spawn '{spawn_point_name}' non trouvé dans {map_name}, position par défaut (100, 100)")
+            self.player.position[0] = 100
+            self.player.position[1] = 100
 
-        # Initialiser l'état de la carte actuelle
-        self.map = 'world'
+        self.player.update()
+        self.player.save_location()
 
     def handle_input(self):
         """
@@ -88,77 +136,12 @@ class Game:
             self.player.move_right()
             self.player.change_animation('right')
 
-    def switch_house(self):
-        """
-        Change la carte vers l'intérieur de la maison.
-        """
-        # Charger la carte de la maison (house.tmx)
-        tmx_data = pytmx.util_pygame.load_pygame(os.path.join(MAP_DIR, 'house.tmx'))
-        map_data = pyscroll.data.TiledMapData(tmx_data)
-        map_layer = pyscroll.orthographic.BufferedRenderer(map_data, self.screen.get_size())
-        map_layer.zoom = 2
-
-        # Redéfinir les murs pour la carte de la maison
-        self.walls = []
-        for obj in tmx_data.objects:
-            if obj.type == "collision":
-                self.walls.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
-
-        # Redéfinir le groupe de calques avec la nouvelle carte
-        self.group = pyscroll.PyscrollGroup(map_layer=map_layer, default_layer=5)
-        self.group.add(self.player)
-
-        # Définir le rectangle de collision pour sortir de la maison (exit_house)
-        enter_house = get_object_by_name(tmx_data,'exit_house')
-        if enter_house is not None:
-            self.enter_house_rect = pygame.Rect(enter_house.x, enter_house.y, enter_house.width, enter_house.height)
-        else:
-            print("Attention : L'objet 'exit_house' n'a pas été trouvé dans house.tmx. Le rectangle de collision ne sera pas défini.")
-            self.enter_house_rect = pygame.Rect(0, 0, 0, 0)
-
-        # Récupérer le point de spawn à l'intérieur de la maison
-        spawn_house_point = get_object_by_name(tmx_data, 'spawn_house')
-        if spawn_house_point is not None:
-            self.player.position[0] = spawn_house_point.x
-            self.player.position[1] = spawn_house_point.y - 20
-            self.player.update()
-            self.player.save_location()  # Évite que move_back() renvoie à l'ancienne carte
-
-    def switch_world(self):
-        """
-        Change la carte vers le monde extérieur.
-        """
-        # Charger la carte du monde (carte.tmx)
-        tmx_data = pytmx.util_pygame.load_pygame(os.path.join(MAP_DIR, 'carte.tmx'))
-        map_data = pyscroll.data.TiledMapData(tmx_data)
-        map_layer = pyscroll.orthographic.BufferedRenderer(map_data, self.screen.get_size())
-        map_layer.zoom = 2
-
-        # Redéfinir les murs pour la carte du monde
-        self.walls = []
-        for obj in tmx_data.objects:
-            if obj.type == "collision":
-                self.walls.append(pygame.Rect(obj.x, obj.y, obj.width, obj.height))
-
-        # Redéfinir le groupe de calques avec la nouvelle carte
-        self.group = pyscroll.PyscrollGroup(map_layer=map_layer, default_layer=5)
-        self.group.add(self.player)
-
-        # Redéfinir le rectangle de collision pour entrer dans la maison (enter_house)
-        enter_house = get_object_by_name(tmx_data,'enter_house')
-        if enter_house is not None:
-            self.enter_house_rect = pygame.Rect(enter_house.x, enter_house.y, enter_house.width, enter_house.height)
-        else:
-            print("Attention : L'objet 'enter_house' n'a pas été trouvé dans carte.tmx lors du retour au monde. Le rectangle de collision ne sera pas défini.")
-            self.enter_house_rect = pygame.Rect(0, 0, 0, 0)
-
-        # Récupérer le point de spawn dans le monde (point de sortie de la maison)
-        spawn_world_point = get_object_by_name(tmx_data, 'enter_house_exit')
-        if spawn_world_point is not None:
-            self.player.position[0] = spawn_world_point.x
-            self.player.position[1] = spawn_world_point.y
-            self.player.update()
-            self.player.save_location()  # Évite que move_back() renvoie à l'ancienne carte
+    def check_portals(self):
+        """Vérifie si le joueur entre dans un portail et effectue la transition."""
+        for portal in self.current_map.portals:
+            if self.player.feet.colliderect(portal.rect):
+                self.load_map(portal.target_map, portal.target_spawn)
+                return  # Sortir après le changement de carte
 
     def update(self):
         """
@@ -166,19 +149,12 @@ class Game:
         """
         self.group.update()
 
-        # Vérifier l'entrée dans la maison
-        if self.map == 'world' and self.player.feet.colliderect(self.enter_house_rect):
-            self.switch_house()
-            self.map = 'house'
-
-        # Vérifier la sortie de la maison (utiliser elif pour éviter des conflits si les rectangles se chevauchent)
-        elif self.map == 'house' and self.player.feet.colliderect(self.enter_house_rect):
-            self.switch_world()
-            self.map = 'world'
+        # Vérifier les portails
+        self.check_portals()
 
         # Vérification de la collision avec les murs
         for sprite in self.group.sprites():
-            if sprite.feet.collidelist(self.walls) > -1:
+            if sprite.feet.collidelist(self.current_map.walls) > -1:
                 sprite.move_back()
 
     
