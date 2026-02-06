@@ -1,4 +1,6 @@
 import os
+import sys
+
 import pygame
 import pytmx
 import pyscroll
@@ -43,6 +45,9 @@ class Game:
         # Carte actuelle et groupe pyscroll
         self.current_map = None
         self.group = None
+
+        # Cooldown de teleportation (empeche la boucle infinie entre portails)
+        self.portal_cooldown = 0
 
         # Générer un joueur (position temporaire, mise à jour au chargement de la carte)
         self.player = Player(0, 0)
@@ -138,9 +143,14 @@ class Game:
 
     def check_portals(self):
         """Vérifie si le joueur entre dans un portail et effectue la transition."""
+        if self.portal_cooldown > 0:
+            self.portal_cooldown -= 1
+            return
+
         for portal in self.current_map.portals:
             if self.player.feet.colliderect(portal.rect):
                 self.load_map(portal.target_map, portal.target_spawn)
+                self.portal_cooldown = 30  # ~0.5 seconde a 60 FPS
                 return  # Sortir après le changement de carte
 
     def update(self):
@@ -154,7 +164,7 @@ class Game:
 
         # Vérification de la collision avec les murs
         for sprite in self.group.sprites():
-            if sprite.feet.collidelist(self.current_map.walls) > -1:
+            if hasattr(sprite, 'feet') and sprite.feet.collidelist(self.current_map.walls) > -1:
                 sprite.move_back()
 
     
@@ -166,6 +176,10 @@ class Game:
         running = True
 
         while running:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+
             self.player.save_location()  # Mémorise la location du joueur
             self.handle_input()
             self.update()
@@ -173,13 +187,6 @@ class Game:
             self.group.draw(self.screen)
             pygame.display.flip()
 
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    running = False
-                    
-
             clock.tick(60)  # Définit les FPS
 
         pygame.quit()
-        import sys
-        sys.exit()
